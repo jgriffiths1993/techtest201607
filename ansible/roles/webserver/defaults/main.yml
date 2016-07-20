@@ -1,0 +1,17 @@
+---
+# Lists of vhost configuration. Should match the appropriate template
+# found at templates/{{ item.name }}.j2.
+# Additional variables will be passed to the template.
+apache2_vhosts: []
+
+# A list of Apache2 modules to install. These are expanded to:
+# libapache2-mod-{{ name }}.
+apache2_module_packages: []
+
+# List of Apache modules to enable
+apache2_modules_enabled: []
+
+# Blacklisted Apache2 modules - modules which should *not* be available
+apache2_modules_blacklisted: []
+
+# vim:se ft=yaml sw=2 ts=2 sts=2 et si:

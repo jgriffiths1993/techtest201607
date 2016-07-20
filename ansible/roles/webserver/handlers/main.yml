@@ -1,0 +1,6 @@
+---
+- name: 'apache2 restarted?'
+  service: name=apache2 state=restarted
+  become: yes
+
+# vim:se ft=yaml sw=2 ts=2 sts=2 si et:

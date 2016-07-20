@@ -1,0 +1,29 @@
+# {{ ansible_managed }}
+# __________________________________________________________________________
+#
+# Copyright (c)  University of Leodis. All rights reserved
+# __________________________________________________________________________
+
+NameVirtualHost *:{{ item.port }}
+
+<VirtualHost *:{{ item.port }}>
+
+    ServerName {{ item.name }}
+
+    {% if item.aliases -%}
+    ServerAlias {% for alias in item.aliases %}{{ alias }} {% endfor %}
+    {% endif %}
+
+    ProxyRequests off
+
+    <Proxy *>
+        Order deny,allow
+        Allow from all
+    </Proxy>
+
+    <Location />
+        ProxyPass {{ item.backend }}
+        ProxyPassReverse {{ item.backend }}
+    </Location>
+</VirtualHost>
+

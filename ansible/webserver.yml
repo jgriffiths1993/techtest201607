@@ -1,0 +1,24 @@
+---
+#
+# Author: Joshua Griffiths <jgriffiths@ceramyq.com>
+# Automates the set up of University of Leodis Apache webservers
+#
+- hosts: webservers
+  vars:
+    apache2_vhosts:
+      - name: 'www.leodis.ac.uk'
+        port: 80
+        backend: 'http://localhost:1337/'
+        aliases:
+          - 'leodis.ac.uk'
+          - 'leodis.co.uk'
+          - 'www.leodis.co.uk'
+          - 'leodis.net'
+          - 'www.leodis.net'
+    apache2_modules_enabled:
+      - 'proxy'
+      - 'proxy_http'
+  roles:
+    - { role: webserver }
+
+# vim:se ft=yaml sw=2 ts=2 sts=2 et si:

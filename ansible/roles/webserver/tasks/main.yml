@@ -1,0 +1,171 @@
+---
+- name: 'ubuntu_precise: needs cleanup?'
+  command: "test -f /opt/apache/bin/httpd"
+  register: needs_cleanup
+  become: yes
+  failed_when: false
+  changed_when: false
+  tags: 
+    - cleanup
+
+- name: 'ubuntu_precise: httpd stopped?'
+  service: name=httpd state=stopped
+  become: yes
+  when: needs_cleanup.rc == 0
+  failed_when: false
+  tags:
+    - cleanup
+
+- name: 'ubuntu_precise: sysvinit script removed?'
+  file: >
+    path=/etc/init.d/httpd
+    state=absent
+  become: yes
+  tags:
+    - cleanup
+
+- name: 'ubuntu_precise: old apache removed?'
+  command: "rm -fr /opt/apache"
+  become: yes
+  changed_when: needs_cleanup.rc == 0
+  when: needs_cleanup.rc == 0
+  tags:
+    - cleanup
+
+- name: 'ubuntu_precise: apache2 installed?'
+  apt: >
+    name=apache2
+    update_cache=yes
+    cache_valid_time=600
+  when: ansible_distribution|lower == 'ubuntu' and
+        ansible_distribution_release|lower == 'precise'
+  become: yes
+  tags:
+    - install
+  notify:
+    - 'apache2 restarted?'
+
+- name: 'ubuntu_precise: apache2 upgraded?'
+  apt: >
+    name=apache2
+    update_cache=yes
+    cache_valid_time=600
+    state=latest
+  when: ansible_distribution|lower == 'ubuntu' and
+        ansible_distribution_release|lower == 'precise'
+  become: yes
+  tags:
+    - upgrade
+  notify:
+    - 'apache2 restarted?'
+
+- name: 'ubuntu_precise: apache2 modules installed?'
+  apt: >
+    name={{ item }}
+    update_cache=yes
+    cache_valid_time=600
+    state=present
+  when: ansible_distribution|lower == 'ubuntu' and
+        ansible_distribution_release|lower == 'precise'
+  become: yes
+  with_items: "{{ apache2_module_packages }}"
+  tags:
+    - install
+  notify:
+    - 'apache2 restarted?'
+
+- name: 'ubuntu_precise: apache2 modules upgraded?'
+  apt: >
+    name={{ item }}
+    update_cache=yes
+    cache_valid_time=600
+    state=latest
+  when: ansible_distribution|lower == 'ubuntu' and
+        ansible_distribution_release|lower == 'precise'
+  become: yes
+  with_items: "{{ apache2_module_packages }}"
+  tags:
+    - upgrade
+  notify:
+    - 'apache2 restarted?'
+
+- name: 'ubuntu_precise: apache2 modules enabled?'
+  apache2_module: name={{ item }} state=present
+  when: ansible_distribution|lower == 'ubuntu' and
+        ansible_distribution_release|lower == 'precise'
+  become: yes
+  with_items: "{{ apache2_modules_enabled }}"
+  tags:
+    - install
+    - upgrade
+    - update
+  notify:
+    - 'apache2 restarted?'
+
+- name: 'ubuntu_precise: apache2 modules blacklisted?'
+  apache2_module: name={{ item }} state=absent
+  when: ansible_distribution|lower == 'ubuntu' and
+        ansible_distribution_release|lower == 'precise'
+  become: yes
+  with_items: "{{ apache2_modules_blacklisted }}"
+  tags:
+    - install
+    - upgrade
+    - update
+  notify:
+    - 'apache2 restarted?'
+
+- name: 'ubuntu_precise: virtualhosts configured?'
+  template: >
+    owner=root
+    group=root
+    mode=0640
+    src={{ item.name }}.j2
+    dest=/etc/apache2/sites-available/{{ item.name }}.conf
+  when: ansible_distribution|lower == 'ubuntu' and
+        ansible_distribution_release|lower == 'precise' and
+        apache2_vhosts|length > 0
+  become: yes
+  with_items: "{{ apache2_vhosts }}"
+  tags:
+    - install
+    - upgrade
+    - update
+  notify:
+    - 'apache2 restarted?'
+
+- name: 'ubuntu_precise: enabled virtualhosts known?'
+  command: "ls /etc/apache2/sites-enabled"
+  register: enabled_vhosts
+  become: yes
+  changed_when: false
+  tags: 
+    - install
+    - upgrade
+    - update
+
+- name: 'ubuntu_precise: unknown virtualhosts disabled?'
+  file: >
+    state=absent
+    path=/etc/apache2/sites-enabled/{{ item }}
+  with_items: "{{ enabled_vhosts.stdout_lines }}"
+  when: item|regex_replace('\.conf$', '') not in apache2_vhosts|map(attribute='name')|list|unique
+  become: yes
+  tags: 
+    - update
+  notify:
+    - 'apache2 restarted?'
+
+- name: 'ubuntu_precise: virtualhosts enabled?'
+  file: >
+    state=link
+    path=/etc/apache2/sites-enabled/{{ item.name }}.conf
+    src=/etc/apache2/sites-available/{{ item.name }}.conf
+  with_items: "{{ apache2_vhosts }}"
+  become: yes
+  tags: 
+    - update
+  notify:
+    - 'apache2 restarted?'
+
+# vim:se ft=yaml sw=2 ts=2 sts=2 et si:
