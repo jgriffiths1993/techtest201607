@@ -115,6 +115,23 @@
   notify:
     - 'apache2 restarted?'
 
+- name: 'ubuntu_precise: httpd configured?'
+  template: >
+    owner=root
+    group=root
+    mode=0644
+    src=httpd.j2
+    dest=/etc/apache2/httpd.conf
+  when: ansible_distribution|lower == 'ubuntu' and
+        ansible_distribution_release|lower == 'precise'
+  become: yes
+  tags:
+    - install
+    - upgrade
+    - update
+  notify:
+    - 'apache2 restarted?'
+
 - name: 'ubuntu_precise: virtualhosts configured?'
   template: >
     owner=root
