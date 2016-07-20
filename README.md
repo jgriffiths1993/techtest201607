@@ -40,3 +40,7 @@
   * install: installs new apache package and modules
   * upgrade: upgrades apache and module packages
   * update: updates the apache/virtualhost configuration
+
+## Could Be Better If
+
+* Used NGINX instead. The event driven model for reverse proxying is much faster and much more efficient; especially important when considering cost of memory and threads in a cloud environment.
